@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quizzy</title>
+    <style>
+        body {
+            font-family: cursive;
+            margin: 0;
+            padding: 0;
+        }
+
+        #navbar {
+            background-color: #6b2a2a;
+            overflow: hidden;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 16px;
+            height: 70px;
+            text-decoration: none;
+        }
+
+        #navbar img {
+            height: 50px;
+            margin-right: auto;
+        }
+
+        #navbar a {
+            color: rgb(255, 255, 255);
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        #navbar a:hover {
+            color: rgb(255, 0, 0);
+        }
+
+        #navbar a.icon {
+            font-size: 25px;
+            font-family: cursive;
+            margin-bottom: 4px;
+            color: blueviolet;
+        }
+
+        #navbar a.icon:hover {
+            font-size: 26px;
+        }
+
+        #navbar a.user-icon {
+            margin-left: auto;
+        }
+
+        .dropdown {
+            display: inline-block;
+        }
+
+        .dropbtn {
+            background-color: #6b2a2a;
+            color: white;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            font-family: cursive;
+            margin: 10px;
+        }
+
+        .dropbtn:hover {
+            color: #ff0000;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #000000;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            display: block;
+            text-decoration: none;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #000000;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        #intro-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #quiz-container {
+            display: none;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .option {
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .correct {
+            background-color: #7FFF00;
+            /* Green */
+        }
+
+        .incorrect {
+            background-color: #ff0000;
+        }
+
+        #result-container {
+            display: none;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            color: rgb(1, 1, 1);
+        }
+
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            background: red;
+            border-radius: 20%;
+        }
+
+        #feedback-form {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #feedback-textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="navbar">
+        <a class="icon" href="#">Quizzy</a>
+        <a href="#">Home</a>
+        <a href="#">Contact Us</a>
+        <a href="#">About Us</a>
+
+        <div class="dropdown">
+            <button class="dropbtn">Subjects</button>
+            <div class="dropdown-content">
+                <a href="#" onclick="setSubject('java')">Java</a>
+                <a href="#" onclick="setSubject('python')">Python</a>
+            </div>
+        </div>
+        <button><a href="logout.php?logout=true">Logout</a></button>
+    </div>
+
+    <div id="intro-container">
+        <h1>Welcome to Quizzy!</h1>
+        <p>Test your knowledge with our quiz. Answer questions from various subjects.</p>
+        <button id="start-button" onclick="startQuiz()">Start Quiz</button>
+    </div>
+
+    <div id="quiz-container">
+        <h1>Welcome to the Quiz!</h1>
+        <div id="question-container"></div>
+        <div id="options-container"></div>
+        <button onclick="nextQuestion()">Next</button>
+        <div id="timer-container">
+            <p id="timer"> <span id="timer-display"></span></p>
+        </div>
+    </div>
+
+    <div id="result-container">
+        <h2>Quiz completed!</h2>
+        <p id="result"></p>
+        <div id="feedback-form">
+            <h2>Feedback</h2>
+            <p>We'd love to hear your thoughts! Please provide any feedback or suggestions:</p>
+            <textarea id="feedback-textarea"></textarea>
+            <button onclick="submitFeedback()">Submit Feedback</button>
+        </div>
+    </div>
+
+    <script>
+        let timer;
+        let timeRemaining = 30; // 30 seconds
+
+        function startQuiz() {
+            introContainer.style.display = 'none';
+            quizContainer.style.display = 'block';
+
+            if (!quizStarted) {
+                displayQuestion();
+                startTimer();
+                quizStarted = true;
+            }
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timer);
+                    showResult();
+                }
+            }, 1000); // Update every second
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const timerDisplay = document.getElementById('timer-display');
+            timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        function showResult() {
+            clearInterval(timer); // Stop the timer
+            resultParagraph.textContent = `You got ${correctAnswers} out of ${currentQuestionIndex} questions correct!`;
+            resultContainer.style.display = 'block';
+            quizContainer.style.display = 'none';
+        }
+
+        function nextQuestion() {
+            clearInterval(timer); // Stop the timer before moving to the next question
+            // Reset styles
+            const options = document.querySelectorAll('.option');
+            options.forEach((option) => {
+                option.classList.remove('correct', 'incorrect');
+                // Re-enable click event for the next question
+                option.addEventListener('click', () => checkAnswer(option.textContent, option));
+            });
+
+            currentQuestionIndex++;
+            timeRemaining = 30; // Reset the timer for each new question
+            updateTimerDisplay();
+            startTimer(); // Restart the timer for the next question
+            displayQuestion();
+        }
+
+        // Call updateTimerDisplay() at the beginning to initialize the timer display
+        updateTimerDisplay();
+
+        const quizContainer = document.getElementById('quiz-container');
+        const introContainer = document.getElementById('intro-container');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const resultContainer = document.getElementById('result-container');
+        const resultParagraph = document.getElementById('result');
+        const startButton = document.getElementById('start-button');
+
+        // Display the introduction section initially and hide the quiz container
+        introContainer.style.display = 'block';
+        quizContainer.style.display = 'none';
+
+        const subjects = {
+            java: [
+                {
+                    question: 'What is the main purpose of the "static" keyword in Java?',
+                    options: ['To declare a constant variable', 'To define a method that belongs to the class rather than an instance of the class', 'To create an object of a class', 'To make a variable thread-safe'],
+                    correctOption: 'To define a method that belongs to the class rather than an instance of the class'
+                },
+                {
+                    question: 'What is the difference between "ArrayList" and "LinkedList" in Java?',
+                    options: ['ArrayList is a resizable array, and LinkedList is a doubly linked list.', 'ArrayList allows fast random access, while LinkedList allows fast insertion and deletion.', 'Both ArrayList and LinkedList have the same performance characteristics.', 'ArrayList is synchronized, and LinkedList is not synchronized.'],
+                    correctOption: 'ArrayList allows fast random access, while LinkedList allows fast insertion and deletion.'
+                }
+            ],
+            python: [
+                {
+                    question: 'What is the output of the following code snippet: print(2 ** 3)?',
+                    options: ['6', '8', '9', 'None'],
+                    correctOption: '8'
+                },
+                {
+                    question: 'How do you insert an element into a set in Python?',
+                    options: ['set.insert(element)', 'set.add(element)', 'set.append(element)', 'set.push(element)'],
+                    correctOption: 'set.add(element)'
+                }
+            ]
+        };
+
+        let selectedSubject = 'java';
+        let questions = subjects[selectedSubject];
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let quizStarted = false;
+
+        function setSubject(subject) {
+            selectedSubject = subject;
+            questions = subjects[selectedSubject];
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            quizStarted = false; // Reset quiz state
+        }
+
+        function displayQuestion() {
+            const question = questions[currentQuestionIndex];
+            questionContainer.innerHTML = question.question;
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', () => checkAnswer(option, optionElement));
+                optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        function checkAnswer(selectedOption, optionElement) {
+            const question = questions[currentQuestionIndex];
+
+            if (selectedOption === question.correctOption) {
+                correctAnswers++;
+                optionElement.classList.add('correct');
+            } else {
+                optionElement.classList.add('incorrect');
+            }
+
+            // Disable further clicks
+            const options = document.querySelectorAll('.option');
+            options.forEach(option => {
+                option.removeEventListener('click', () => checkAnswer(option.textContent, option));
+            });
+
+            nextQuestion();
+        }
+
+        function submitFeedback() {
+            const feedbackText = document.getElementById('feedback-textarea').value;
+            // Handle feedback submission here
+            alert('Thank you for your feedback!');
+            document.getElementById('feedback-textarea').value = '';
+        }
+    </script>
+
+</body>
+
+</html>
